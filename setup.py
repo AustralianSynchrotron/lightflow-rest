@@ -42,11 +42,4 @@ setup(
         'lightflow>=1.0.0',
         'Flask>=0.12.1'
     ],
-
-    entry_points={
-        'console_scripts': [
-            'lightflow-rest=lightflow_rest.scripts.cli:cli',
-        ],
-    },
-
 )
