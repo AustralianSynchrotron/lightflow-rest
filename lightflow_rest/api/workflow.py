@@ -30,12 +30,12 @@ def api_start_workflow(name):
         else:
             keep_data = False
 
-        id = start_workflow(name=name,
-                            config=current_app.config['LIGHTFLOW'],
-                            clear_data_store=not keep_data,
-                            store_args=request.form.to_dict())
+        job_id = start_workflow(name=name,
+                                config=current_app.config['LIGHTFLOW'],
+                                clear_data_store=not keep_data,
+                                store_args=request.form.to_dict())
 
-        return ApiResponse({'id': id})
+        return ApiResponse({'id': job_id})
     except (WorkflowArgumentError, WorkflowImportError) as err:
         raise ApiError(StatusCode.InternalServerError, str(err))
 
