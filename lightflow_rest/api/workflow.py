@@ -1,6 +1,6 @@
 from flask import Blueprint, current_app, request
 
-from lightflow.workflows import start_workflow, stop_workflow
+from lightflow.workflows import start_workflow, stop_workflow, list_workflows
 from lightflow.models.exceptions import (WorkflowArgumentError,
                                          WorkflowImportError)
 
@@ -57,5 +57,27 @@ def api_stop_workflow(name=None):
 
 
 @api.route('/', methods=['GET'])
-def api_list_workflows(name):
-    pass
+def api_list_workflows():
+    """ Endpoint for listing all available workflows.
+
+    Returns a list of available workflows as json under the key 'workflows'.
+    The name, arguments and docstring for each workflow is returned. 
+    """
+    result = {'workflows': []}
+
+    for wf in list_workflows(current_app.config['LIGHTFLOW']):
+        result['workflows'].append({
+            'name': wf.name,
+            'arguments': [
+                {
+                    'name': arg.name,
+                    'type': arg.type.__name__,
+                    'docs': arg.help,
+                    'default': arg.default
+                } for arg in wf.arguments
+            ],
+            'docs': wf.docstring.split('\n')[0] if wf.docstring is not None else ''
+
+        })
+
+    return ApiResponse(result)
