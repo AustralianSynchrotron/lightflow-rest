@@ -1,8 +1,8 @@
 from flask import Blueprint, current_app, request
 
-from lightflow.workflows import start_workflow, stop_workflow, list_workflows
-from lightflow.models.exceptions import (WorkflowArgumentError,
-                                         WorkflowImportError)
+from lightflow.workflows import start_workflow, stop_workflow, list_workflows, list_jobs
+from lightflow.models.exceptions import WorkflowArgumentError, WorkflowImportError
+from lightflow.queue.const import JobStatus, JobType
 
 from lightflow_rest.core.response import StatusCode, ApiResponse, ApiError
 
@@ -57,7 +57,47 @@ def api_stop_workflow(name=None):
 
 
 @api.route('/', methods=['GET'])
-def api_list_workflows():
+@api.route('/active', methods=['GET'])
+def api_list_active_workflows():
+    """ Endpoint for listing all active workflows together with their dags and tasks.
+    
+    The result is a dictionary, where the workflow id is the key and the value are
+    fields with workflow information and lists of all the dags and tasks that are
+    currently running.
+    """
+    workflows = {}
+    for job in list_jobs(current_app.config['LIGHTFLOW'], status=JobStatus.Active):
+        if job.workflow_id not in workflows:
+            workflows[job.workflow_id] = {'dags': [], 'tasks': []}
+
+        if job.type == JobType.Dag:
+            workflows[job.workflow_id]['dags'].append(_job_to_dict(job))
+        elif job.type == JobType.Task:
+            workflows[job.workflow_id]['tasks'].append(_job_to_dict(job))
+        else:
+            workflows[job.workflow_id] = {**workflows[job.workflow_id],
+                                          **_job_to_dict(job)}
+
+    return ApiResponse({'workflows': workflows})
+
+
+@api.route('/scheduled', methods=['GET'])
+def api_list_scheduled_workflows():
+    """ Endpoint for listing all scheduled workflows.
+    
+    The result is a dictionary, where the workflow id is the key and the value are
+    fields with workflow information.
+    """
+    workflows = {}
+    for job in list_jobs(current_app.config['LIGHTFLOW'],
+                         status=JobStatus.Scheduled, filter_by_type=JobType.Workflow):
+        workflows[job.workflow_id] = _job_to_dict(job)
+
+    return ApiResponse({'workflows': workflows})
+
+
+@api.route('/available', methods=['GET'])
+def api_list_available_workflows():
     """ Endpoint for listing all available workflows.
 
     Returns a list of available workflows as json under the key 'workflows'.
@@ -81,3 +121,21 @@ def api_list_workflows():
         })
 
     return ApiResponse(result)
+
+
+def _job_to_dict(job):
+    """ Helper function to convert a job into a dictionary for the API response. 
+    
+    Args:
+        job (JobStats): The celery job representing a workflow, dag or task. 
+    """
+    return {
+        'name': job.name,
+        'id': job.id,
+        'acknowledged': job.acknowledged,
+        'func_name': job.func_name,
+        'hostname': job.hostname,
+        'worker_name': job.worker_name,
+        'worker_pid': job.worker_pid,
+        'routing_key': job.routing_key
+    }
