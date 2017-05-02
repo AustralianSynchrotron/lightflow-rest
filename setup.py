@@ -39,7 +39,7 @@ setup(
     packages=find_packages(exclude=['tests', 'examples']),
 
     install_requires=[
-        'lightflow>=1.0.0',
+        'lightflow>=1.2.1',
         'Flask>=0.12.1'
     ],
 )
