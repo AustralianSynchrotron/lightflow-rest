@@ -61,9 +61,8 @@ def api_stop_workflow(name=None):
 def api_list_active_workflows():
     """ Endpoint for listing all active workflows together with their dags and tasks.
     
-    The result is a dictionary, where the workflow id is the key and the value are
-    fields with workflow information and lists of all the dags and tasks that are
-    currently running.
+    The result is a list of dictionaries comprised of the workflow fields with workflow
+    information and lists of all the dags and tasks that are currently running.
     """
     workflows = {}
     for job in list_jobs(current_app.config['LIGHTFLOW'], status=JobStatus.Active):
@@ -71,44 +70,40 @@ def api_list_active_workflows():
             workflows[job.workflow_id] = {'dags': [], 'tasks': []}
 
         if job.type == JobType.Dag:
-            workflows[job.workflow_id]['dags'].append(_job_to_dict(job))
+            workflows[job.workflow_id]['dags'].append(job.to_dict())
         elif job.type == JobType.Task:
-            workflows[job.workflow_id]['tasks'].append(_job_to_dict(job))
+            workflows[job.workflow_id]['tasks'].append(job.to_dict())
         else:
             workflows[job.workflow_id] = {**workflows[job.workflow_id],
-                                          **_job_to_dict(job)}
+                                          **job.to_dict()}
 
-    return ApiResponse({'workflows': workflows})
+    return ApiResponse({'workflows': list(workflows.values())})
 
 
 @api.route('/registered', methods=['GET'])
 def api_list_registered_workflows():
     """ Endpoint for listing all registered workflows.
     
-    The result is a dictionary, where the workflow id is the key and the value are
-    fields with workflow information.
+    The result is a list of dictionaries comprised of the workflow fields with workflow
+    information.
     """
-    workflows = {}
-    for job in list_jobs(current_app.config['LIGHTFLOW'],
-                         status=JobStatus.Registered, filter_by_type=JobType.Workflow):
-        workflows[job.workflow_id] = _job_to_dict(job)
-
-    return ApiResponse({'workflows': workflows})
+    return ApiResponse({'workflows': [
+        job.to_dict() for job in list_jobs(current_app.config['LIGHTFLOW'],
+                                           status=JobStatus.Registered,
+                                           filter_by_type=JobType.Workflow)]})
 
 
 @api.route('/reserved', methods=['GET'])
 def api_list_reserved_workflows():
     """ Endpoint for listing all reserved workflows.
 
-    The result is a dictionary, where the workflow id is the key and the value are
-    fields with workflow information.
+    The result is a list of dictionaries comprised of the workflow fields with workflow
+    information.
     """
-    workflows = {}
-    for job in list_jobs(current_app.config['LIGHTFLOW'],
-                         status=JobStatus.Reserved, filter_by_type=JobType.Workflow):
-        workflows[job.workflow_id] = _job_to_dict(job)
-
-    return ApiResponse({'workflows': workflows})
+    return ApiResponse({'workflows': [
+        job.to_dict() for job in list_jobs(current_app.config['LIGHTFLOW'],
+                                           status=JobStatus.Reserved,
+                                           filter_by_type=JobType.Workflow)]})
 
 
 @api.route('/available', methods=['GET'])
@@ -136,21 +131,3 @@ def api_list_available_workflows():
         })
 
     return ApiResponse(result)
-
-
-def _job_to_dict(job):
-    """ Helper function to convert a job into a dictionary for the API response. 
-    
-    Args:
-        job (JobStats): The celery job representing a workflow, dag or task. 
-    """
-    return {
-        'name': job.name,
-        'id': job.id,
-        'acknowledged': job.acknowledged,
-        'func_name': job.func_name,
-        'hostname': job.hostname,
-        'worker_name': job.worker_name,
-        'worker_pid': job.worker_pid,
-        'routing_key': job.routing_key
-    }
