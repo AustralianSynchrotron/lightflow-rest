@@ -81,16 +81,31 @@ def api_list_active_workflows():
     return ApiResponse({'workflows': workflows})
 
 
-@api.route('/scheduled', methods=['GET'])
-def api_list_scheduled_workflows():
-    """ Endpoint for listing all scheduled workflows.
+@api.route('/registered', methods=['GET'])
+def api_list_registered_workflows():
+    """ Endpoint for listing all registered workflows.
     
     The result is a dictionary, where the workflow id is the key and the value are
     fields with workflow information.
     """
     workflows = {}
     for job in list_jobs(current_app.config['LIGHTFLOW'],
-                         status=JobStatus.Scheduled, filter_by_type=JobType.Workflow):
+                         status=JobStatus.Registered, filter_by_type=JobType.Workflow):
+        workflows[job.workflow_id] = _job_to_dict(job)
+
+    return ApiResponse({'workflows': workflows})
+
+
+@api.route('/reserved', methods=['GET'])
+def api_list_reserved_workflows():
+    """ Endpoint for listing all reserved workflows.
+
+    The result is a dictionary, where the workflow id is the key and the value are
+    fields with workflow information.
+    """
+    workflows = {}
+    for job in list_jobs(current_app.config['LIGHTFLOW'],
+                         status=JobStatus.Reserved, filter_by_type=JobType.Workflow):
         workflows[job.workflow_id] = _job_to_dict(job)
 
     return ApiResponse({'workflows': workflows})
