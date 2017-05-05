@@ -40,6 +40,7 @@ setup(
 
     install_requires=[
         'lightflow>=1.2.2',
-        'Flask>=0.12.1'
+        'Flask>=0.12.1',
+        'ruamel.yaml>=0.14.2'
     ],
 )
