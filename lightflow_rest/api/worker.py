@@ -2,7 +2,6 @@ from flask import Blueprint, current_app, request
 
 from lightflow.workers import list_workers, stop_worker
 from lightflow.workflows import list_jobs
-from lightflow.queue.const import JobType
 
 from lightflow_rest.core.response import ApiResponse, ApiError, StatusCode
 
@@ -13,7 +12,7 @@ api = Blueprint('worker', __name__, url_prefix='/worker')
 @api.route('/', methods=['GET'])
 def api_list_workers():
     """ Endpoint for listing all workers and, if requested, all running jobs.
-    
+
     The result is a list of workers. The result can be limited to certain queues by
     using the 'queue' argument. This argument can be used multiple times, e.g.
     ?queue=dag&queue=task. If the 'detail' is set to '1', all jobs running on a
@@ -50,8 +49,8 @@ def api_list_workers():
 @api.route('/', methods=['DELETE'])
 @api.route('/<name>', methods=['DELETE'])
 def api_stop_worker(name=None):
-    """ Endpoint for stopping a single worker or all workers. 
-    
+    """ Endpoint for stopping a single worker or all workers.
+
     The dynamic path variable <name> is the name of the worker that should be stopped.
     If no <name> is given, all workers are stopped.
     """

@@ -13,11 +13,11 @@ api = Blueprint('workflow', __name__, url_prefix='/workflow')
 @api.route('/<name>', methods=['POST'])
 def api_start_workflow(name):
     """ Endpoint for starting a new workflow.
-    
+
     The dynamic path variable <name> is the name of the workflow that should be started.
     The endpoint accepts a parameter keep_data (e.g. ?keep_data=1) that tells the system
     to not delete the workflow data in the persistent storage. Arguments for the
-    workflow are sent as form-encoded data. 
+    workflow are sent as form-encoded data.
     """
     try:
         keep_data = request.args.get('keep_data', None)
@@ -60,7 +60,7 @@ def api_stop_workflow(name=None):
 @api.route('/active', methods=['GET'])
 def api_list_active_workflows():
     """ Endpoint for listing all active workflows together with their dags and tasks.
-    
+
     The result is a list of dictionaries comprised of the workflow fields with workflow
     information and lists of all the dags and tasks that are currently running.
     """
@@ -83,7 +83,7 @@ def api_list_active_workflows():
 @api.route('/registered', methods=['GET'])
 def api_list_registered_workflows():
     """ Endpoint for listing all registered workflows.
-    
+
     The result is a list of dictionaries comprised of the workflow fields with workflow
     information.
     """
@@ -111,20 +111,20 @@ def api_list_available_workflows():
     """ Endpoint for listing all available workflows.
 
     Returns a list of available workflows as json under the key 'workflows'.
-    The name, arguments and docstring for each workflow is returned. 
+    The name, parameters and docstring for each workflow is returned.
     """
     result = {'workflows': []}
 
     for wf in list_workflows(current_app.config['LIGHTFLOW']):
         result['workflows'].append({
             'name': wf.name,
-            'arguments': [
+            'parameters': [
                 {
-                    'name': arg.name,
-                    'type': arg.type.__name__,
-                    'docs': arg.help,
-                    'default': arg.default
-                } for arg in wf.arguments
+                    'name': param.name,
+                    'type': param.type.__name__,
+                    'docs': param.help,
+                    'default': param.default
+                } for param in wf.parameters
             ],
             'docs': wf.docstring.split('\n')[0] if wf.docstring is not None else ''
 
